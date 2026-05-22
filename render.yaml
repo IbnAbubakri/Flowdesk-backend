@@ -1,0 +1,37 @@
+# FlowDesk AI — Render Blueprint
+services:
+  - type: web
+    name: flowdesk-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn flowdesk_api:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GOOGLE_API_KEY
+        sync: false  # Set in Render dashboard
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: PAIRING_PHONE
+        sync: false  # Set your phone number after deploy
+      - key: AUTH_DIR
+        value: /data/auth_info
+    disk:
+      name: flowdesk-data
+      mountPath: /data
+      sizeGB: 1
+
+  - type: worker
+    name: flowdesk-whatsapp
+    env: node
+    buildCommand: cd whatsapp-bridge && npm install
+    startCommand: node whatsapp-bridge/bridge.js
+    envVars:
+      - key: FLOWDESK_API
+        value: https://flowdesk-api.onrender.com  # Update this after deploy
+      - key: PAIRING_PHONE
+        sync: false
+      - key: AUTH_DIR
+        value: /data/auth_info
+    disk:
+      name: flowdesk-data
+      mountPath: /data
+      sizeGB: 1

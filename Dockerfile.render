@@ -1,0 +1,30 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install Node.js for the WhatsApp bridge
+RUN apt-get update && apt-get install -y curl && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/*
+
+# Python deps
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Node deps
+COPY whatsapp-bridge/package.json whatsapp-bridge/
+RUN cd whatsapp-bridge && npm install
+
+# Copy all source
+COPY flowdesk_api.py .
+COPY whatsapp-bridge/ whatsapp-bridge/
+
+# Expose API port
+EXPOSE 3001
+
+# Start both services
+CMD python flowdesk_api.py & \
+    sleep 2 && \
+    echo "Starting WhatsApp bridge..." && \
+    node whatsapp-bridge/bridge.js
